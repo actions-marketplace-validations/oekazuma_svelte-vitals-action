@@ -12,12 +12,21 @@ export async function main(): Promise<void> {
   const token = core.getInput('github-token') || process.env.GITHUB_TOKEN || '';
 
   const analysis = await analyzeProject({ cwd: path });
-  const { config, version } = analysis;
+  const { config, version, warnings, loadedConfig } = analysis;
+  // Includes rules that crashed and were dropped from the run, so the scan can be
+  // incomplete while the gate below still passes — these must not stay silent.
+  for (const line of warnings) core.warning(line);
+
   const results = await applyScope(analysis.results, {
     cwd: path,
     config,
     diffBase: diff,
     baseline,
+    // The baseline ref is analyzed in a temp worktree with no node_modules in its
+    // ancestry, so re-loading svelte-vitals.config.* there throws whenever that config
+    // imports svelte-vitals — and the fallback is to report every finding as new. `null`
+    // means "this project has no config file", not "go looking for one".
+    analyzeOpts: { loadedConfig: loadedConfig ?? null },
     errorLog: (line) => core.warning(line)
   });
 

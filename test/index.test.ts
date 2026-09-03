@@ -35,12 +35,21 @@ const h = vi.hoisted(() => {
     }
   }));
 
-  const analyzeProject = vi.fn(async () => ({
-    results: [],
-    config: { failOn: 'critical' },
-    version: '0.0.0-test'
-  }));
-  const applyScope = vi.fn(async (results: unknown[]) => results);
+  const analyzeProject = vi.fn(
+    async (): Promise<{
+      results: unknown[];
+      config: { failOn: string };
+      version: string;
+      warnings: string[];
+      loadedConfig?: unknown;
+    }> => ({
+      results: [],
+      config: { failOn: 'critical' },
+      version: '0.0.0-test',
+      warnings: []
+    })
+  );
+  const applyScope = vi.fn(async (results: unknown[], _opts: Record<string, unknown>) => results);
 
   const formatGithubReport = vi.fn(() => 'annotations');
   const formatMarkdownReport = vi.fn(() => 'markdown report');
@@ -202,6 +211,48 @@ describe('main()', () => {
     expect(h.warning).toHaveBeenCalledTimes(1);
     expect(h.warning.mock.calls[0]![0]).toMatch(/failed to post\/update the PR comment/);
     expect(h.warning.mock.calls[0]![0]).toMatch(/boom: rate limited/);
+    expect(h.setFailed).not.toHaveBeenCalled();
+  });
+
+  it("reuses this run's config-file load for the baseline worktree", async () => {
+    const loadedConfig = { path: '/repo/svelte-vitals.config.ts', config: {} };
+    h.analyzeProject.mockResolvedValueOnce({
+      results: [],
+      config: { failOn: 'critical' },
+      version: '0.0.0-test',
+      warnings: [],
+      loadedConfig
+    });
+
+    await main();
+
+    const { analyzeOpts } = h.applyScope.mock.calls[0]![1] as { analyzeOpts: Record<string, unknown> };
+    expect(analyzeOpts).toEqual({ loadedConfig });
+    // Anything beyond loadedConfig changes applyScope's behaviour: a `route` key alone
+    // flips its route-scoping signal and with it how suppressions are applied.
+    expect(Object.keys(analyzeOpts)).toEqual(['loadedConfig']);
+  });
+
+  it('tells the baseline worktree there is no config file rather than letting it look', async () => {
+    // `undefined` would mean "load one from cwd" — i.e. from inside the worktree.
+    await main();
+
+    expect(h.applyScope.mock.calls[0]![1]).toMatchObject({ analyzeOpts: { loadedConfig: null } });
+  });
+
+  it("surfaces the analyzer's non-fatal warnings without failing the build", async () => {
+    h.analyzeProject.mockResolvedValueOnce({
+      results: [],
+      config: { failOn: 'critical' },
+      version: '0.0.0-test',
+      warnings: ['rule seo/title-presence failed and was skipped: boom', 'skipped 1 unparseable file']
+    });
+
+    await main();
+
+    expect(h.warning).toHaveBeenCalledTimes(2);
+    expect(h.warning).toHaveBeenCalledWith('rule seo/title-presence failed and was skipped: boom');
+    expect(h.warning).toHaveBeenCalledWith('skipped 1 unparseable file');
     expect(h.setFailed).not.toHaveBeenCalled();
   });
 

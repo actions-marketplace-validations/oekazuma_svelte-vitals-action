@@ -23,25 +23,24 @@ jobs:
           # Full history: the tag step below verifies an existing tag is an ancestor of
           # HEAD, which needs the actual commit graph, not just the tip commit.
           fetch-depth: 0
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24.18.0
+          node-version: 24.20.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Create Release Pull Request or apply version
         id: changesets
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
-          publish: pnpm changeset publish
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          publish-script: pnpm changeset publish
       - name: Tag and release this private package
         # This is a single-package, private (never npm-published) repo distributed via
-        # git tag/SHA — `changeset publish` bumps the version and CHANGELOG.md but (in
-        # the current stable @changesets/cli line) skips tag/release creation entirely
-        # for private packages. This step fills that in with a plain vX.Y.Z tag: no
+        # git tag/SHA. Changesets only touches this package at all because
+        # `.changeset/config.json` sets `privatePackages.version` — and that config
+        # deliberately leaves `tag` off, so changesets bumps the version and CHANGELOG.md
+        # while tagging stays here. This step fills that in with a plain vX.Y.Z tag: no
         # Renovate-comment translation is needed here (unlike the old monorepo home of
         # this package) because this repo's tags are never shared with any other
         # package's version history, so the built-in github-actions manager just works.

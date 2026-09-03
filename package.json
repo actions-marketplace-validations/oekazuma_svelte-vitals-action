@@ -1,6 +1,6 @@
 {
   "name": "@svelte-vitals/action",
-  "version": "0.5.0",
+  "version": "0.12.0",
   "private": true,
   "type": "module",
   "description": "First-party GitHub Action running svelte-vitals in CI — annotations, job summary, sticky PR comment.",
@@ -10,7 +10,7 @@
     "url": "git+https://github.com/oekazuma/svelte-vitals-action.git"
   },
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=24.16.0"
   },
   "scripts": {
     "build": "tsup",
@@ -22,19 +22,19 @@
     "release": "changeset publish"
   },
   "dependencies": {
-    "svelte-vitals": "^0.34.0",
-    "@svelte-vitals/core": "^0.30.0",
+    "svelte-vitals": "^0.54.2",
+    "@svelte-vitals/core": "^0.51.0",
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.1",
+    "@changesets/cli": "^3.0.1",
     "@types/node": "^24.13.3",
-    "oxfmt": "^0.60.0",
-    "oxlint": "^1.75.0",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.80.0",
     "tsup": "^8.5.1",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
-  "packageManager": "pnpm@11.17.0"
+  "packageManager": "pnpm@11.25.0"
 }
